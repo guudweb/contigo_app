@@ -27,6 +27,9 @@ class _SetupScreenState extends State<SetupScreen> {
   int _notificationsPerDay = 3;
   bool _usePhaseRecommendation = true;
 
+  // Track if editing existing config
+  bool _isEditing = false;
+
   bool get _isValid => _lastPeriodDate != null;
 
   @override
@@ -39,6 +42,7 @@ class _SetupScreenState extends State<SetupScreen> {
     final config = StorageService.getConfig();
     if (config != null) {
       setState(() {
+        _isEditing = true;
         _nameController.text = config.partnerName ?? '';
         _lastPeriodDate = config.lastPeriodDate;
         _cycleLength = config.cycleLength;
@@ -112,9 +116,13 @@ class _SetupScreenState extends State<SetupScreen> {
     }
 
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      if (_isEditing) {
+        Navigator.of(context).pop();
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
     }
   }
 
@@ -715,9 +723,9 @@ class _SetupScreenState extends State<SetupScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       disabledBackgroundColor: AppTheme.border,
                     ),
-                    child: const Text(
-                      'Comenzar',
-                      style: TextStyle(
+                    child: Text(
+                      _isEditing ? 'Listo' : 'Comenzar',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),

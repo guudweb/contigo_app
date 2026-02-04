@@ -143,7 +143,7 @@ class NotificationService {
 
         await _scheduleNotification(
           id: _reminderNotificationId,
-          title: '💝 Tu pareja te necesita',
+          title: 'Tu pareja te necesita',
           body: 'Aún no has enviado ningún mensaje hoy. Un pequeño gesto puede hacer una gran diferencia.',
           scheduledDate: reminderTime,
           payload: 'reminder',
@@ -173,7 +173,7 @@ class NotificationService {
     final timeOfDay = index == 0 ? 'Buenos días' :
                       index == total - 1 ? 'Buenas noches' : 'Hola';
 
-    return '$timeOfDay 💙';
+    return timeOfDay;
   }
 
   /// Get notification body based on phase
@@ -302,7 +302,7 @@ class NotificationService {
 
     await _notifications.show(
       0,
-      '💙 Contigo',
+      'Contigo',
       'Las notificaciones están funcionando correctamente.',
       details,
     );
