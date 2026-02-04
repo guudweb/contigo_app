@@ -625,6 +625,45 @@ class _SetupScreenState extends State<SetupScreen> {
                                 ],
                               ),
                             ),
+
+                            const SizedBox(height: 16),
+
+                            // Test notification button
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  final hasPermission = await NotificationService.requestPermissions();
+                                  if (hasPermission) {
+                                    await NotificationService.showTestNotification();
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('¡Notificación de prueba enviada!'),
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Permiso de notificaciones denegado'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                icon: const Icon(Icons.notifications_active),
+                                label: const Text('Probar notificación'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppTheme.primary,
+                                  side: BorderSide(color: AppTheme.primary),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                              ),
+                            ),
                           ],
                         ],
                       ),
