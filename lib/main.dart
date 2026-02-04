@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'services/storage_service.dart';
+import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/setup_screen.dart';
 import 'screens/home_screen.dart';
@@ -10,6 +11,9 @@ void main() async {
 
   // Initialize Hive
   await StorageService.init();
+
+  // Initialize notifications
+  await NotificationService.init();
 
   // Initialize date formatting for Spanish
   await initializeDateFormatting('es', null);

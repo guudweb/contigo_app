@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/cycle_config.dart';
 import '../services/storage_service.dart';
+import '../services/notification_service.dart';
+import '../services/cycle_service.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
 
@@ -18,6 +20,12 @@ class _SetupScreenState extends State<SetupScreen> {
   int _cycleLength = 28;
   int _periodLength = 5;
   bool _showAdvanced = false;
+  bool _showNotificationSettings = false;
+
+  // Notification settings
+  bool _notificationsEnabled = true;
+  int _notificationsPerDay = 3;
+  bool _usePhaseRecommendation = true;
 
   bool get _isValid => _lastPeriodDate != null;
 
@@ -35,6 +43,9 @@ class _SetupScreenState extends State<SetupScreen> {
         _lastPeriodDate = config.lastPeriodDate;
         _cycleLength = config.cycleLength;
         _periodLength = config.periodLength;
+        _notificationsEnabled = config.notificationsEnabled;
+        _notificationsPerDay = config.notificationsPerDay;
+        _usePhaseRecommendation = config.usePhaseRecommendation;
       });
     }
   }
@@ -76,15 +87,45 @@ class _SetupScreenState extends State<SetupScreen> {
       lastPeriodDate: _lastPeriodDate!,
       cycleLength: _cycleLength,
       periodLength: _periodLength,
+      notificationsEnabled: _notificationsEnabled,
+      notificationsPerDay: _notificationsPerDay,
+      usePhaseRecommendation: _usePhaseRecommendation,
     );
 
     await StorageService.saveConfig(config);
+
+    // Request notification permissions and schedule if enabled
+    if (_notificationsEnabled) {
+      final hasPermission = await NotificationService.requestPermissions();
+      if (hasPermission) {
+        await NotificationService.scheduleNotifications(
+          lastPeriod: _lastPeriodDate!,
+          cycleLength: _cycleLength,
+          periodLength: _periodLength,
+          notificationsPerDay: _usePhaseRecommendation
+              ? NotificationService.getRecommendedNotifications(
+                  _getCurrentPhase())
+              : _notificationsPerDay,
+          notificationsEnabled: _notificationsEnabled,
+        );
+      }
+    }
 
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     }
+  }
+
+  String _getCurrentPhase() {
+    if (_lastPeriodDate == null) return 'follicular';
+    final cycleInfo = CycleService.getCycleInfo(
+      _lastPeriodDate!,
+      _cycleLength,
+      _periodLength,
+    );
+    return cycleInfo.phase;
   }
 
   @override
@@ -360,6 +401,226 @@ class _SetupScreenState extends State<SetupScreen> {
                                   _periodLength = value.round();
                                 });
                               },
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Notification settings card
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                      boxShadow: AppTheme.cardShadow,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Notification toggle header
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _showNotificationSettings =
+                                    !_showNotificationSettings;
+                              });
+                            },
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.notifications_outlined,
+                                  color: AppTheme.primary,
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Text(
+                                    'Notificaciones',
+                                    style: TextStyle(
+                                      color: AppTheme.textPrimary,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Switch(
+                                  value: _notificationsEnabled,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _notificationsEnabled = value;
+                                    });
+                                  },
+                                  activeColor: AppTheme.primary,
+                                ),
+                                Icon(
+                                  _showNotificationSettings
+                                      ? Icons.expand_less
+                                      : Icons.expand_more,
+                                  color: AppTheme.textMuted,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          if (_notificationsEnabled &&
+                              _showNotificationSettings) ...[
+                            const SizedBox(height: 16),
+                            const Divider(),
+                            const SizedBox(height: 16),
+
+                            // Use phase recommendation toggle
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Ajustar según fase',
+                                        style: TextStyle(
+                                          color: AppTheme.textPrimary,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Más notificaciones en fases sensibles',
+                                        style: TextStyle(
+                                          color: AppTheme.textMuted,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Switch(
+                                  value: _usePhaseRecommendation,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _usePhaseRecommendation = value;
+                                    });
+                                  },
+                                  activeColor: AppTheme.primary,
+                                ),
+                              ],
+                            ),
+
+                            if (!_usePhaseRecommendation) ...[
+                              const SizedBox(height: 20),
+
+                              // Manual notification count
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Notificaciones por día',
+                                    style: TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$_notificationsPerDay',
+                                    style: const TextStyle(
+                                      color: AppTheme.primary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Slider(
+                                value: _notificationsPerDay.toDouble(),
+                                min: 1,
+                                max: 4,
+                                divisions: 3,
+                                activeColor: AppTheme.primary,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _notificationsPerDay = value.round();
+                                  });
+                                },
+                              ),
+
+                              // Time indicators
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '1',
+                                      style: TextStyle(
+                                        color: AppTheme.textMuted,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      '2',
+                                      style: TextStyle(
+                                        color: AppTheme.textMuted,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      '3',
+                                      style: TextStyle(
+                                        color: AppTheme.textMuted,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      '4',
+                                      style: TextStyle(
+                                        color: AppTheme.textMuted,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+
+                            const SizedBox(height: 16),
+
+                            // Info about notification times
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary.withOpacity(0.1),
+                                borderRadius:
+                                    BorderRadius.circular(AppTheme.radiusSmall),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    color: AppTheme.primary,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      _usePhaseRecommendation
+                                          ? 'Las notificaciones se ajustan automáticamente: 2-3 en fases normales, 3-4 en fases sensibles'
+                                          : 'Recibirás $_notificationsPerDay notificación${_notificationsPerDay > 1 ? 'es' : ''} al día distribuidas entre 9am y 8pm',
+                                      style: TextStyle(
+                                        color: AppTheme.primary,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ],

@@ -16,10 +16,22 @@ class CycleConfig extends HiveObject {
   @HiveField(3)
   int periodLength;
 
+  @HiveField(4)
+  bool notificationsEnabled;
+
+  @HiveField(5)
+  int notificationsPerDay;
+
+  @HiveField(6)
+  bool usePhaseRecommendation;
+
   CycleConfig({
     this.partnerName,
     required this.lastPeriodDate,
     this.cycleLength = 28,
     this.periodLength = 5,
+    this.notificationsEnabled = true,
+    this.notificationsPerDay = 3,
+    this.usePhaseRecommendation = true,
   });
 }

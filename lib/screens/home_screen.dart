@@ -4,6 +4,7 @@ import '../data/recommendations.dart';
 import '../models/cycle_config.dart';
 import '../services/cycle_service.dart';
 import '../services/storage_service.dart';
+import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/phase_indicator.dart';
 import '../widgets/recommendation_card.dart';
@@ -28,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadData();
+    _scheduleNotifications();
   }
 
   void _loadData() {
@@ -44,6 +46,37 @@ class _HomeScreenState extends State<HomeScreen> {
         _sentCategories = StorageService.getTodaySentCategories();
       });
     }
+  }
+
+  Future<void> _scheduleNotifications() async {
+    final config = StorageService.getConfig();
+    if (config == null) return;
+
+    final cycleInfo = CycleService.getCycleInfo(
+      config.lastPeriodDate,
+      config.cycleLength,
+      config.periodLength,
+    );
+
+    // Get the number of notifications based on settings
+    final notificationsCount = config.usePhaseRecommendation
+        ? NotificationService.getRecommendedNotifications(cycleInfo.phase)
+        : config.notificationsPerDay;
+
+    // Schedule daily notifications
+    await NotificationService.scheduleNotifications(
+      lastPeriod: config.lastPeriodDate,
+      cycleLength: config.cycleLength,
+      periodLength: config.periodLength,
+      notificationsPerDay: notificationsCount,
+      notificationsEnabled: config.notificationsEnabled,
+    );
+
+    // Schedule reminder if no messages sent today
+    await NotificationService.scheduleReminderIfNeeded(
+      notificationsPerDay: notificationsCount,
+      notificationsEnabled: config.notificationsEnabled,
+    );
   }
 
   void _navigateToDetail(Recommendation rec) async {

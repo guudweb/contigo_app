@@ -21,13 +21,16 @@ class CycleConfigAdapter extends TypeAdapter<CycleConfig> {
       lastPeriodDate: fields[1] as DateTime,
       cycleLength: fields[2] as int,
       periodLength: fields[3] as int,
+      notificationsEnabled: fields[4] as bool? ?? true,
+      notificationsPerDay: fields[5] as int? ?? 3,
+      usePhaseRecommendation: fields[6] as bool? ?? true,
     );
   }
 
   @override
   void write(BinaryWriter writer, CycleConfig obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.partnerName)
       ..writeByte(1)
@@ -35,7 +38,13 @@ class CycleConfigAdapter extends TypeAdapter<CycleConfig> {
       ..writeByte(2)
       ..write(obj.cycleLength)
       ..writeByte(3)
-      ..write(obj.periodLength);
+      ..write(obj.periodLength)
+      ..writeByte(4)
+      ..write(obj.notificationsEnabled)
+      ..writeByte(5)
+      ..write(obj.notificationsPerDay)
+      ..writeByte(6)
+      ..write(obj.usePhaseRecommendation);
   }
 
   @override
