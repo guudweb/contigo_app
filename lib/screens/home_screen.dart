@@ -139,10 +139,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Colors.white.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Icon(
-                                  Icons.favorite,
-                                  color: Colors.white,
-                                  size: 20,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.asset(
+                                    'assets/images/app_icon.png',
+                                    width: 28,
+                                    height: 28,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 10),

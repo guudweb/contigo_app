@@ -164,10 +164,13 @@ class _SetupScreenState extends State<SetupScreen> {
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Icon(
-                          Icons.favorite,
-                          color: Colors.white,
-                          size: 40,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.asset(
+                            'assets/images/app_icon.png',
+                            width: 60,
+                            height: 60,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
